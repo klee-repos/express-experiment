@@ -1,0 +1,40 @@
+<!-- Latest compiled and minified CSS -->
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+
+<!-- jQuery library -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+<!-- Latest compiled JavaScript -->
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  $(function () {
+    var socket = io();
+    socket.on('connect', function(){
+      console.log('Connected');
+      socket.emit('startSession', 'test');
+    });
+    socket.on('gameName', function(name){
+      console.log("Game name is " + name)
+      $('#name').text(name);
+    });
+    socket.on('score', function(score){
+      $('#scoreValue').text(score);
+    });
+  });
+</script>
+
+<html>
+<head>
+    <title>Alexa Blackjack</title>
+</head>
+<body>
+  <div id="game">
+    <div id="name">Name</div>
+    <div id="score">
+      Score: <p id="scoreValue">0</p>
+    </div>
+  </div>
+</body>
+</html>
