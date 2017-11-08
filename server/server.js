@@ -7,6 +7,7 @@ var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var mongoose = require('mongoose');
 var Game = require('./models/game');
+var atlasdb;
 require('dotenv').config();
 
 var bodyParser = require('body-parser');
@@ -16,10 +17,14 @@ app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 var gameNum = 0;
 var gameNames = ['donkey','frog','bear'];
 
-mongoose.Promise = global.Promise;
-mongoose.connect(process.env.DB_URI, {useMongoClient: true}, function(err) {
-	if (err) console.log("Mongoose error: " + err);
-	else console.log("Connected to db");
+//mongoose.Promise = global.Promise;
+mongoose.connect(uri, {useMongoClient: true}, function(err) {
+	if (err) {
+		console.log("Mongoose error: " + err);
+	} else {
+		atlasdb = mongoose.connection;
+		console.log("Successfully connected to MongoDB Atlas via mongoose");
+	}
 });
 
 http.listen(process.env.PORT || 3000);
