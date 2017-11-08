@@ -70,7 +70,7 @@ app.post('/connect', function(req, res) {
 		game.save();
 	})
 	res.end();
-})
+});
 
 app.post('/score', function(req, res){
 	var name = req.body.name;
