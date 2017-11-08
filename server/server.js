@@ -5,9 +5,7 @@ var path = require('path');
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
-var mongoose = require('mongoose');
-var Game = require('./models/game');
-var atlasdb;
+
 require('dotenv').config();
 
 var bodyParser = require('body-parser');
@@ -17,7 +15,12 @@ app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 var gameNum = 0;
 var gameNames = ['donkey','frog','bear'];
 
-//mongoose.Promise = global.Promise;
+var mongoose = require('mongoose');
+var Game = require('./models/game');
+var atlasdb;
+var uri = process.env.DB_URI;
+
+mongoose.Promise = global.Promise;
 mongoose.connect(uri, {useMongoClient: true}, function(err) {
 	if (err) {
 		console.log("Mongoose error: " + err);
