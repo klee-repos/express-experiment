@@ -1,6 +1,8 @@
 
 'use strict';
 
+var port = process.env.PORT || 3000;
+
 var path = require('path');
 var app = require('express')();
 var http = require('http').Server(app);
@@ -30,29 +32,51 @@ mongoose.connect(uri, {useMongoClient: true}, function(err) {
 	}
 });
 
-http.listen(process.env.PORT || 3000);
+
 
 io.on('connection',function(socket){
 	console.log("User connected");
 	socket.on('startSession',function(){
 		var name = gameNames[gameNum];
+		var found = false;
+
 		var game = new Game({
 			name: name,
 			_id: name,
 			score: 0,
 			amzUserId: ""
 		});
-		console.log('Starting game ' + name);
-		game.save()
-			.then(function(game){
+
+		Game.findOne({name: name}, function(err, foundGame) {
+			if (foundGame) {
+				found = true;
+			} else {
+				found = false;
+			}
+		}).then(function(foundGame) {
+			if (found) {
 				socket.join(name);
+				console.log("Connected to existing session in db");
 				gameNum++;
 				socket.emit('gameName', name);
-				socket.on('disconnect',function(){
-					console.log("Game " + name + " ended");
-					game.remove();
-				});
-			})
+			} else {
+				game.save(function(saveErr) {
+					if (saveErr) {
+						console.log(saveErr);
+					} else {
+						console.log("New session created in db");
+					}
+				}).then(function(game){
+					socket.join(name);
+					gameNum++;
+					socket.emit('gameName', name);
+				})
+			}
+		})
+		socket.on('disconnect',function(){
+			console.log("Game " + name + " ended");
+			game.remove();
+		});
 	});
 });
 
@@ -66,10 +90,14 @@ app.post('/connect', function(req, res) {
 	var name = req.body.name;
 	var amzUserId = req.body.amzUserId;
 	Game.findOne({name: name}, function(err, game) {
-		game.amzUserId = amzUserId;
-		game.save();
+		if (game) {
+			game.amzUserId = amzUserId;
+			game.save();
+			res.send({"found":true});
+		} else {
+			res.send({"found":false});
+		}
 	})
-	res.end();
 });
 
 app.post('/score', function(req, res){
@@ -87,4 +115,8 @@ app.get('/score/:name', function(req, res){
 	Game.findOne({name:req.params.name}, function(err,game){
 		res.send(game);
 	});
+});
+
+http.listen(port, function() {
+	console.log("Node server running on port: " + port);
 });
