@@ -12,15 +12,18 @@
   $(function () {
     var socket = io();
     socket.on('connect', function(){
-      console.log('Connected');
-      socket.emit('startSession', 'test');
+      console.log('Web browser connected');
+      socket.emit('startSession', 'startSession');
     });
     socket.on('gameName', function(name){
       console.log("Game name is " + name)
       $('#name').text(name);
     });
-    socket.on('score', function(score){
-      $('#scoreValue').text(score);
+    socket.on('updateCards', function(game){
+      console.log(game);
+      $('#playerHand').text(game.playerHand.cards);
+      $('#dealerHand').text(game.dealerHand.cards);
+      $('#gameStatus').text(game.result);
     });
   });
 </script>
@@ -30,11 +33,64 @@
     <title>Alexa Blackjack</title>
 </head>
 <body>
-  <div id="game">
-    <div id="name">Name</div>
-    <div id="score">
-      Score: <p id="scoreValue">0</p>
+
+<br />
+
+<div class="container">
+  <nav class="navbar navbar-default">
+    <div class="container">
+
+      <div class="navbar-header">
+        <a class="navbar-brand">Blackjack</a>
+      </div>
+
+      <div class="collapse navbar-collapse" id="navbar-collapse">
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="/">Home<span class="sr-only">(current)</span></a></li>
+          <li><a href="/about">About</a></li>
+        </ul>
+      </div>
+
+    </div>
+  </nav>
+</div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-12">
+      <div class="panel panel-info">
+        <div class="panel-heading"><h5>Session</h5></div>
+        <div class="panel-body">
+          <p><b>Session Name: </b><span id="name">placeholder</span></p>
+          <p><b>Game Status: </b><span id="gameStatus">No game started</span></p>
+        </div>
+      </div>
     </div>
   </div>
+</div>
+
+<div class="container">
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="panel panel-success">
+        <div class="panel-heading"><h5>Player Hand</h5></div>
+        <div class="panel-body">
+          <p><span id="playerHand"></span></p>
+          <p>Value: <span id="playerValue"></span></p>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="panel panel-success">
+        <div class="panel-heading"><h5>Dealer Hand</h5></div>
+        <div class="panel-body">
+          <p><span id="dealerHand"></span></p>
+          <p>Value: <span id="dealerValue"></span></p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

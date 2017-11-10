@@ -1,12 +1,13 @@
 
 'use strict';
 
-var port = process.env.PORT || 3000;
-
 var path = require('path');
 var app = require('express')();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+
+var Blackjack = require('./models/Blackjack');
+var blackjack = new Blackjack();
 
 require('dotenv').config();
 
@@ -14,12 +15,13 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true })); // support encoded bodies
 
+
 var gameNum = 0;
-var gameNames = ['donkey','frog','bear'];
+var gameNames = ['donkey','frog','bear','dog','cat','buffalo','badger','ant','giraffe', 'elephant'];
 
 var mongoose = require('mongoose');
-var Game = require('./models/game');
-var atlasdb;
+var Game = require('./models/Game');
+var db;
 var uri = process.env.DB_URI;
 
 mongoose.Promise = global.Promise;
@@ -27,18 +29,18 @@ mongoose.connect(uri, {useMongoClient: true}, function(err) {
 	if (err) {
 		console.log("Mongoose error: " + err);
 	} else {
-		atlasdb = mongoose.connection;
-		console.log("Successfully connected to MongoDB Atlas via mongoose");
+		db = mongoose.connection;
+		console.log("Successfully connected to database via mongoose");
 	}
 });
 
-
+http.listen(process.env.PORT || 3000, function() {
+	console.log("Node server started")
+});
 
 io.on('connection',function(socket){
-	console.log("User connected");
 	socket.on('startSession',function(){
 		var name = gameNames[gameNum];
-		var found = false;
 
 		var game = new Game({
 			name: name,
@@ -47,6 +49,7 @@ io.on('connection',function(socket){
 			amzUserId: ""
 		});
 
+		var found = false;
 		Game.findOne({name: name}, function(err, foundGame) {
 			if (foundGame) {
 				found = true;
@@ -82,10 +85,6 @@ io.on('connection',function(socket){
 
 /* App routes */
 
-app.get('/', function(req, res){
-	res.sendFile(path.resolve('client/index.html'));
-});
-
 app.post('/connect', function(req, res) {
 	var name = req.body.name;
 	var amzUserId = req.body.amzUserId;
@@ -100,16 +99,37 @@ app.post('/connect', function(req, res) {
 	})
 });
 
-app.post('/score', function(req, res){
-	var name = req.body.name;
-	var score = req.body.score;
-	Game.findOne({name: name},function(err,game){
-		game.score = score;
-		game.save();
-		io.to(name).emit('score',score);
-	})
-	res.end();
+app.get('/deal/:name', function(req, res) {
+	var hand = blackjack.startNewGame();
+	io.to(req.params.name).emit('updateCards', blackjack);
+	res.send(blackjack);
+})
+
+app.get('/hit/:name', function(req, res) {
+	var hand = blackjack.hit();
+	io.to(req.params.name).emit('updateCards', blackjack);
+	res.send(blackjack);
+})
+
+app.get('/stand/:name', function(req, res) {
+	var hand = blackjack.stand();
+	io.to(req.params.name).emit('updateCards', blackjack);
+	res.send(blackjack);
+})
+
+app.get('/', function(req, res){
+	res.sendFile(path.resolve('client/index.html'));
 });
+
+// app.use('/blackjack/*', function(req,res,next){ 
+// 	Game.findOne({name: req.body.name}, function(err, game){
+// 		if(err) next(err);
+// 		else {
+// 			req.game = game;
+// 			next();
+// 		}
+// 	});
+// })
 
 app.get('/score/:name', function(req, res){
 	Game.findOne({name:req.params.name}, function(err,game){
@@ -117,6 +137,13 @@ app.get('/score/:name', function(req, res){
 	});
 });
 
-http.listen(port, function() {
-	console.log("Node server running on port: " + port);
-});
+// app.post('/score', function(req, res){
+// 	var name = req.body.name;
+// 	var score = req.body.score;
+// 	Game.findOne({name: name},function(err,game){
+// 		game.score = score;
+// 		game.save();
+// 		io.to(name).emit('score',score);
+// 	})
+// 	res.end();
+// });
